@@ -348,23 +348,27 @@ export function invokeClaude(
 }
 
 /**
- * Resume Claude with optional session ID
+ * Resume Claude session in the current directory
+ *
+ * Uses `claude --continue` which resumes the most recent conversation in the
+ * current directory. This is simpler and more reliable than tracking session IDs,
+ * since Auto Claude already restores terminals to their correct cwd/projectPath.
+ *
+ * Note: The sessionId parameter is kept for backwards compatibility but is ignored.
+ * Claude Code's --resume flag expects user-named sessions (set via /rename), not
+ * internal session file IDs.
  */
 export function resumeClaude(
   terminal: TerminalProcess,
-  sessionId: string | undefined,
+  _sessionId: string | undefined,
   getWindow: WindowGetter
 ): void {
   terminal.isClaudeMode = true;
 
-  let command: string;
-  if (sessionId) {
-    // SECURITY: Escape sessionId to prevent command injection
-    command = `claude --resume ${escapeShellArg(sessionId)}`;
-    terminal.claudeSessionId = sessionId;
-  } else {
-    command = 'claude --continue';
-  }
+  // Always use --continue which resumes the most recent session in the current directory
+  // This is more reliable than --resume with session IDs since we already restore
+  // terminals to their correct cwd
+  const command = 'claude --continue';
 
   terminal.pty.write(`${command}\r`);
 
